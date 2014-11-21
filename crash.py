@@ -1,11 +1,33 @@
 #!/usr/bin/env python
+#
+# Copyright(C) 2014 Sungwoo Choo <choo@sungwoo.me>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
 import sys, json, subprocess, argparse
 
-parser = argparse.ArgumentParser(description='Symbolicate iOS crash report')
-parser.add_argument('crashreport', help='crash report file')
-parser.add_argument('executable', help='App executable')
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Symbolicate iOS crash report.')
+parser.add_argument('crashreport', help='Apple crash report file')
+parser.add_argument('executable', help='App executable file')
 parser.add_argument('dsym', help='dSYM file')
-
+parser.add_argument('--report', dest='report', help='Save report to JSON-formatted file')
 args = vars(parser.parse_args())
 executable = args['executable']
 dsym = args['dsym']
@@ -158,7 +180,7 @@ binary_name = images[0]['name']
 for thread in threads:
 	print "---- Thread", thread['number'], "----"
 	if thread['crashed'] is True:
-		print "Crashed"
+		print "*** Crashed thread ***"
 	for stack in thread['stacktrace']:
 		if stack['name'] == binary_name:
 			load_addr = int(stack['addr'], 0)
@@ -172,3 +194,8 @@ crashreport = meta
 crashreport['threads'] = threads
 crashreport['states'] = states
 crashreport['images'] = images
+
+if args['report']:
+	f = open(args['report'], 'w')
+	f.write(json.dumps(crashreport))
+	f.close()
