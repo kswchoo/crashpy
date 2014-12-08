@@ -39,6 +39,7 @@ pos = 0
 
 meta = {}
 threads = {}
+exception_backtrace = None
 
 for pos in range(0, len(lines)):
 	line = lines[pos]
@@ -84,9 +85,27 @@ for pos in range(0, len(lines)):
 	if line.startswith('Exception Codes'):
 		meta['exception_codes'] = line.split(':')[1].strip()
 		continue
+	if line.startswith('Triggered by Thread'):
+		meta['triggered_by_thread'] = line.split(':')[1].strip()
+		continue
+	if line.startswith('Application Specific Information'):
+		pos = pos + 1
+		line = lines[pos]
+		meta['application_specific_information'] = line.strip()
+		continue
+	# if line.startswith('Last Exception Backtrace'):
+	# 	pos = pos + 1
+	# 	line = lines[pos]
+	# 	exception_backtrace = line.strip().split(' ')
+	# 	exception_backtrace = [ x.translate(None, '()') for x in exception_backtrace ]
+	# 	print exception_backtrace
+	# 	continue
 	if line.startswith('Crashed Thread'):
 		meta['crashed_thread'] = line.split(':')[1].strip()
 		continue
+
+	if line.startswith('Last Exception Backtrace'):
+		break
 
 	if line.startswith('Thread'):
 		break
@@ -97,10 +116,17 @@ for pos in range(pos, len(lines)):
 	line = lines[pos]
 	if 'Thread State' in line:
 		break
-	if line.startswith('Thread'):
-		elements = lines[pos].split()
+	if line.startswith('Thread') and 'name' in line:
+		continue
+
+	if line.startswith('Thread') or line.startswith('Last Exception Backtrace'):
 		thread = {}
-		thread['number'] = int(elements[1].translate(None, ':'))
+		if line.startswith('Last Exception Backtrace'):
+			thread['number'] = 'Exception'
+		else:
+			elements = lines[pos].split()
+			thread['number'] = int(elements[1].translate(None, ':'))
+		
 		if 'Crashed' in line:
 			thread['crashed'] = True
 		else:
@@ -147,7 +173,8 @@ for pos in range(pos + 1, len(lines)):
 #print json.dumps(crashreport)
 
 arch = meta['code_type']
-if arch == 'ARM-64': arch = 'arm64'
+if 'ARM-64' in arch: arch = 'arm64'
+if 'ARM (Native)' == arch: arch = 'armv7'
 
 cmd = subprocess.Popen('/usr/bin/otool -arch ' + arch + ' -l ' + executable, shell=True, stdout=subprocess.PIPE)
 lines = cmd.stdout.readlines()
@@ -189,6 +216,13 @@ for thread in threads:
 			symbol = cmd.stdout.readlines()[0].translate(None, '\n')
 			stack['symbol'] = symbol
 			print symbol
+
+if exception_backtrace != None:
+	for load_addr in exception_backtrace:
+		sym_addr = hex(slide_addr - stack_addr + int(load_addr, 0))
+		cmd = subprocess.Popen('/usr/bin/atos -arch ' + arch + ' -o ' + dsym + ' ' + sym_addr, shell=True, stdout=subprocess.PIPE)
+		symbol = cmd.stdout.readlines()[0].translate(None, '\n')
+		print symbol
 
 crashreport = meta
 crashreport['threads'] = threads
