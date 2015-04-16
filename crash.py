@@ -176,7 +176,7 @@ arch = meta['code_type']
 if 'ARM-64' in arch: arch = 'arm64'
 if 'ARM (Native)' == arch: arch = 'armv7'
 
-cmd = subprocess.Popen('/usr/bin/otool -arch ' + arch + ' -l ' + executable, shell=True, stdout=subprocess.PIPE)
+cmd = subprocess.Popen('/usr/bin/otool -arch ' + arch + ' -l "' + executable + '"', shell=True, stdout=subprocess.PIPE)
 lines = cmd.stdout.readlines()
 
 loads = []
@@ -212,7 +212,7 @@ for thread in threads:
 		if stack['name'] == binary_name:
 			load_addr = int(stack['addr'], 0)
 			sym_addr = hex(slide_addr - stack_addr + load_addr)
-			cmd = subprocess.Popen('/usr/bin/atos -arch ' + arch + ' -o ' + dsym + ' ' + sym_addr, shell=True, stdout=subprocess.PIPE)
+			cmd = subprocess.Popen('/usr/bin/atos -arch ' + arch + ' -o "' + dsym + '" ' + sym_addr, shell=True, stdout=subprocess.PIPE)
 			symbol = cmd.stdout.readlines()[0].translate(None, '\n')
 			stack['symbol'] = symbol
 			print symbol
@@ -220,7 +220,7 @@ for thread in threads:
 if exception_backtrace != None:
 	for load_addr in exception_backtrace:
 		sym_addr = hex(slide_addr - stack_addr + int(load_addr, 0))
-		cmd = subprocess.Popen('/usr/bin/atos -arch ' + arch + ' -o ' + dsym + ' ' + sym_addr, shell=True, stdout=subprocess.PIPE)
+		cmd = subprocess.Popen('/usr/bin/atos -arch ' + arch + ' -o "' + dsym + '" ' + sym_addr, shell=True, stdout=subprocess.PIPE)
 		symbol = cmd.stdout.readlines()[0].translate(None, '\n')
 		print symbol
 
