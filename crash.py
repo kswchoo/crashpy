@@ -136,14 +136,15 @@ for pos in range(pos, len(lines)):
 		for pos in range(pos + 1, len(lines)):
 			if lines[pos].startswith('Thread'):
 				break
-			elements = lines[pos].split()
-			if len(elements) >= 6:
+			line = lines[pos]
+			items = line.split()
+			if len(line) >= 70:
 				stack = {}
-				stack['seq'] = elements[0]
-				stack['name'] = elements[1]
-				stack['addr'] = elements[2]
-				stack['addr1'] = elements[3]
-				stack['offset'] = elements[5]
+				stack['seq'] = items[0]
+				stack['name'] = line[4:39].strip()
+				stack['addr'] = items[-4]
+				stack['addr1'] = items[-3]
+				stack['offset'] = items[-1]
 				stacktrace.append(stack)
 		thread['stacktrace'] = stacktrace
 		threads.append(thread)
