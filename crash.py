@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import sys, json, subprocess, argparse
+import sys, json, subprocess, argparse, re
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Symbolicate iOS crash report.')
@@ -161,14 +161,14 @@ for pos in range(pos + 1, len(lines)):
 
 images = []
 for pos in range(pos + 1, len(lines)):
-	elements = lines[pos].split()
 	image = {}
-	image['addr1'] = elements[0]
-	image['addr2'] = elements[2]
-	image['name'] = elements[3].translate(None, '+')
-	image['arch'] = elements[4]
-	image['uuid'] = elements[5].translate(None, '<>')
-	image['path'] = elements[6]
+	m = re.search('^ *(0x[0-9a-z]*) - *(0x[0-9a-z]*) *(\+?)(.*) (arm64|armv7|armv7s) *<([0-9a-z]*)> *(.*)$', lines[pos])
+	image['addr1'] = m.group(1)
+	image['addr2'] = m.group(2)
+	image['name'] = m.group(4)
+	image['arch'] = m.group(5)
+	image['uuid'] = m.group(6)
+	image['path'] = m.group(7)
 	images.append(image)
 
 #print json.dumps(crashreport)
